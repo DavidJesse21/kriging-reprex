@@ -61,17 +61,19 @@ summary(m_spher)
 
 # Create a grid for kriging / predictions
 ch_grid = sf$st_make_grid(ch_border, what = "centers", n = c(100, 100))
-ch_grid = ch_grid[ch_border]
+ch_grid = ch_grid[ch_border] |>
+  # convert from `sfc_POINT` to `sf`, which makes `predict.splm()` work
+  sf$st_as_sf()
 plot(ch_grid)
 
+
 # Try to do kriging using the spmodel package.
-# Does not really work at all :(
-# `Error in forwardsolve(cov_lowchol, c0) : invalid 'k' argument`
-# Notice: I also tried it with a much smaller grid for predictions (< 10x10)
-kg_spm = predict(m_spher, newdata = ch_grid, interval = "none")
+# Works now (but long computation time).
+kg_spm = predict(m_spher, newdata = ch_grid, interval = "prediction")
 
 
-# Using gstat there are no problems at all.
+# I still prefer using gstat as it is much faster.
+# However, I cannot tell if it systematically performs better or worse yet.
 params = coef(m_spher, type = "spcov")
 
 vgm_spher = gs$vgm(
@@ -108,3 +110,8 @@ ggplot() +
     )
   ) +
   scale_fill_viridis_c(name = NULL)
+
+
+(5.356966 - 2.0813387) / qnorm(0.975)
+
+2.0813387 - qnorm(0.975) * 1.671269
